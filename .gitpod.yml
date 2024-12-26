@@ -1,9 +1,16 @@
 image:
   file: .gitpod.Dockerfile
+
 tasks:
-  - name: Build
-    init: cmake -B build && cmake --build build # Example build command
-    command: ./build/your-executable # Example run command
+  - init: sudo pacman -Syu --noconfirm
+    command: echo "Arch Linux workspace is ready!"
+
 ports:
-  - port: 8080 # Example port if your application uses one
-    onOpen: open-browser # Automatically opens the port in a new browser tab
+  - port: 8000
+    onOpen: open-preview
+
+vscode:
+  extensions:
+    - ms-vscode.cpptools
+    - ms-python.python
+    - esbenp.prettier-vscode
