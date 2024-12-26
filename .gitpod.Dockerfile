@@ -1,48 +1,40 @@
-FROM ubuntu:latest
+FROM archlinux:latest
 
-# Install dependencies needed for building
-RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    ca-certificates \
-    software-properties-common
+# Install necessary packages (including base-devel for build tools)
+RUN pacman -Syu --noconfirm base-devel sudo git cmake wget
 
-# Add the LLVM APT repository
-RUN wget https://apt.llvm.org/llvm.sh && \
-    chmod +x llvm.sh && \
-    ./llvm.sh
+# Install LLVM (choose your desired version, e.g., 16, 17, or llvm-git for latest)
+# For a specific release version (e.g. 16):
+RUN pacman -Syu --noconfirm llvm16 clang16 lld16
 
-# Install LLVM 19 (or your desired version)
-RUN apt-get update && \
-    apt-get install -y llvm-19 clang-19 lld-19
+# OR for the latest development version from git (more involved, use with caution):
+# RUN pacman -Syu --noconfirm git
+# RUN git clone https://gitlab.com/llvm/llvm.git /tmp/llvm
+# RUN cd /tmp/llvm && mkdir build && cd build && \
+#     cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;lld" ../ && \
+#     make -j$(nproc) && make install
 
-# Set alternatives (important)
-RUN update-alternatives --install /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-19 190 && \
-    update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-19 190 && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 190 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 190 && \
-    update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-19 190 && \
-    update-alternatives --install /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-19 190
-
-# Set default alternatives
-RUN update-alternatives --set llvm-ar /usr/bin/llvm-ar-19 && \
-    update-alternatives --set ld.lld /usr/bin/ld.lld-19 && \
-    update-alternatives --set clang /usr/bin/clang-19 && \
-    update-alternatives --set clang++ /usr/bin/clang++-19 && \
-    update-alternatives --set llvm-objdump /usr/bin/llvm-objdump-19 && \
-    update-alternatives --set llvm-nm /usr/bin/llvm-nm-19
-
-# Set environment variables (for CMake and other build systems)
-ENV AR /usr/bin/llvm-ar-19
-ENV LD /usr/bin/ld.lld-19
-ENV CC /usr/bin/clang-19
-ENV CXX /usr/bin/clang++-19
-
-# Set the working directory
-WORKDIR /workspace
+# Create a non-root user (recommended for security)
+RUN useradd -m gitpod
+USER gitpod
+WORKDIR /home/gitpod/workspace
 
 # Copy your project files
-COPY . /workspace
+COPY . /home/gitpod/workspace
+
+# Example build command (adjust as needed)
+# RUN cmake -B build && cmake --build build
+
+# Set up environment variables (if needed, adjust paths for llvm-git)
+# ENV AR /usr/bin/llvm-ar-16 #For release version
+# ENV LD /usr/bin/ld.lld-16 #For release version
+# ENV CC /usr/bin/clang-16 #For release version
+# ENV CXX /usr/bin/clang++-16 #For release version
+# or for llvm-git
+# ENV AR /usr/local/bin/llvm-ar
+# ENV LD /usr/local/bin/ld.lld
+# ENV CC /usr/local/bin/clang
+# ENV CXX /usr/local/bin/clang++
+
+# Example command to run on workspace start
+# CMD ["./build/your-executable"]
